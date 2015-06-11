@@ -1,0 +1,4 @@
+_sourceCategory=Akamai* 
+| parse "{\"type\":\"*\",\"format\":\"*\",\"version\":\"*\",\"id\":\"*\",\"start\":\"*\",\"cp\":\"*\",\"message\":{\"proto\":\"*\",\"protoVer\":\"*\",\"status\":\"*\",\"cliIP\":\"*\",\"reqPort\":\"*\",\"reqHost\":\"*\",\"reqMethod\":\"*\"*" 
+as type,format,version,id,start,cp,proto,protover,status,cliIP,reqPort,reqHost,reqMethod,therest 
+| count as Requests by cliIP  | sort -Requests | limit 20

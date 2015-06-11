@@ -1,0 +1,6 @@
+
+Userid=someone@globaldots.com
+Password="topsecret"
+Email-To=
+Email-From=
+Customer=someCustomerName
