@@ -1,7 +1,14 @@
 <?php
 require_once('send-mail.php'); 
 
-function BuildSearchURL($q, $from, $to, $tz) {
+// parameters
+$sc_default_timezone = "UTC"; 
+$sc_BaseURL = "https://api.sumologic.com/api/v1";
+$sc_SearchAPI="/logs/search";
+$sc_default_period="1 hour ago";
+$sc_send_email=FALSE; 
+
+function BuildSearchURL($SearchUrl, $q, $from, $to, $tz) {
 	$querystring=http_build_query(array(
 						'q' => $q, 
 						'from' => $from, 
@@ -9,11 +16,11 @@ function BuildSearchURL($q, $from, $to, $tz) {
 						'tz' => $tz
 						));
 						
-	$APIurl = "https://api.sumologic.com/api/v1/logs/search?".$querystring; 
+	$APIurl = $SearchUrl.$querystring; 
 	return $APIurl;
  }
 
-function GetSumoQuery($q, $from, $to, $tz, $user, $pwd) {					
+function GetSumoQuery($SearchUrl, $q, $from, $to, $tz, $user, $pwd) {					
 	
 	function GetURL($url,$user, $pwd ) {
 		// This internal function works recursively to resolve 301/302 redirects and keep the authorization token between redirects
@@ -44,7 +51,7 @@ function GetSumoQuery($q, $from, $to, $tz, $user, $pwd) {
 				return $json;
 			}
 	}
-	$APIurl=BuildSearchURL($q, $from, $to, $tz)  ; 
+	$APIurl=BuildSearchURL($SearchUrl, $q, $from, $to, $tz)  ; 
 	
 	return GetURL($APIurl,$user, $pwd ) ;
     
@@ -100,7 +107,7 @@ try {
 				
 
 
-	date_default_timezone_set('UTC');
+	date_default_timezone_set($sc_default_timezone);
 	$date = new DateTime();
 
 	// Modify the date settings according to your needs.
@@ -110,15 +117,13 @@ try {
 	// $date->add(DateInterval::createFromDateString('yesterday'));
 	// $fromday = $date->format('Y-m-d') . "T00:00:00";
 	$today=$date->format('c');
-	$date->add(DateInterval::createFromDateString('1 hour ago'));
+	$date->add(DateInterval::createFromDateString($sc_default_period));
 	$fromday = $date->format('c');
 
-	$from= $fromday ;
-	$to  = $today;
-	$tz="UTC";
 
-
-	$json=GetSumoQuery($search, $from, $to, $tz, $user_id, $secret) ; 
+	$json=GetSumoQuery($sc_BaseURL.$sc_SearchAPI."?", $search, $fromday, $today, $sc_default_timezone, $user_id, $secret) ; 
+	
+	
 	// $json=file_get_contents("results.json"); $GLOBALS['http_status'] = 200;
 	
 	if (empty($GLOBALS['http_status']) ) {
@@ -130,7 +135,7 @@ try {
 	}
 	
 	// $outfile="Sumologic-stats-".$customer."-".$fromday."-".$today.".csv"; 
-	$outfile="Sumologic-query-".$customer."-".$search_file.".".$file_format; 
+	$outfile="Sumologic-query-".$customer."-".basename($search_file).".".$file_format; 
 if ( $file_format=="json" ) {
 		if (!file_put_contents($outfile,$json)) {
 				throw new Exception("Error creating file ".$outfile);
@@ -157,12 +162,12 @@ if ( $file_format=="json" ) {
 	}
 	}
 	
-	// comment out the next line to enable emailing of report.
-	return; // don't email for now
-
-	$message="Hourly report"; 
-	  
-	sendfile($recipient, $sender, $subject, $message, $outfile) ; 
+	// Check whether to send email
+	if ($sc_send_email) {
+		$message="Hourly report"; 
+		sendfile($recipient, $sender, $subject, $message, $outfile) ; 
+	}
+	return; 
 
 }
 
