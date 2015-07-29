@@ -8,56 +8,6 @@ $sc_SearchAPI="/logs/search";
 $sc_default_period="1 hour ago";
 $sc_send_email=FALSE; 
 
-function BuildSearchURL($SearchUrl, $q, $from, $to, $tz) {
-	$querystring=http_build_query(array(
-						'q' => $q, 
-						'from' => $from, 
-						'to' => $to, 
-						'tz' => $tz
-						));
-						
-	$APIurl = $SearchUrl.$querystring; 
-	return $APIurl;
- }
-
-function GetSumoQuery($SearchUrl, $q, $from, $to, $tz, $user, $pwd) {					
-	
-	function GetURL($url,$user, $pwd ) {
-		// This internal function works recursively to resolve 301/302 redirects and keep the authorization token between redirects
-		$ch = curl_init();  
-	
-		curl_setopt($ch,CURLOPT_URL,$url);
-		curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
-		curl_setopt($ch,CURLOPT_HEADER, false); 
-		curl_setopt($ch, CURLOPT_VERBOSE, false);
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET"); 
-		curl_setopt($ch, CURLOPT_USERPWD, $user . ":" . $pwd);
-		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, FALSE);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-				'Accept: application/json'
-				));
-
-		curl_setopt($ch,CURLOPT_ENCODING , "gzip");
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		
-		$json=curl_exec($ch);
-		$request_status= curl_getinfo($ch);
-		$status_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
-		curl_close($ch);
-		if ($status_code == 301 || $status_code == 302 )  {
-				return GetURL($request_status['redirect_url'],$user, $pwd ); 
-			} else {
-				$GLOBALS['http_status'] = $status_code;
-				return $json;
-			}
-	}
-	$APIurl=BuildSearchURL($SearchUrl, $q, $from, $to, $tz)  ; 
-	
-	return GetURL($APIurl,$user, $pwd ) ;
-    
-}
-
-
 
 // *******************************************************************************
 // Main Body
@@ -174,6 +124,58 @@ if ( $file_format=="json" ) {
 //catch exception
 catch(Exception $e) {
   echo 'Message: ' .$e->getMessage();
+}
+
+// ===============================================================
+
+
+function BuildSearchURL($SearchUrl, $q, $from, $to, $tz) {
+	$querystring=http_build_query(array(
+						'q' => $q, 
+						'from' => $from, 
+						'to' => $to, 
+						'tz' => $tz
+						));
+						
+	$APIurl = $SearchUrl.$querystring; 
+	return $APIurl;
+ }
+
+function GetSumoQuery($SearchUrl, $q, $from, $to, $tz, $user, $pwd) {					
+	
+	function GetURL($url,$user, $pwd ) {
+		// This internal function works recursively to resolve 301/302 redirects and keep the authorization token between redirects
+		$ch = curl_init();  
+	
+		curl_setopt($ch,CURLOPT_URL,$url);
+		curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
+		curl_setopt($ch,CURLOPT_HEADER, false); 
+		curl_setopt($ch, CURLOPT_VERBOSE, false);
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET"); 
+		curl_setopt($ch, CURLOPT_USERPWD, $user . ":" . $pwd);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, FALSE);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+				'Accept: application/json'
+				));
+
+		curl_setopt($ch,CURLOPT_ENCODING , "gzip");
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+		
+		$json=curl_exec($ch);
+		$request_status= curl_getinfo($ch);
+		$status_code=curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		curl_close($ch);
+		if ($status_code == 301 || $status_code == 302 )  {
+				return GetURL($request_status['redirect_url'],$user, $pwd ); 
+			} else {
+				$GLOBALS['http_status'] = $status_code;
+				return $json;
+			}
+	}
+	$APIurl=BuildSearchURL($SearchUrl, $q, $from, $to, $tz)  ; 
+	
+	return GetURL($APIurl,$user, $pwd ) ;
+    
 }
 
 
