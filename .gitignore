@@ -46,4 +46,5 @@ Temporary Items
 # ==============
 *.csv
 *.json
+*.bat
 files.private
